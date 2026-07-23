@@ -29,20 +29,23 @@
 
     .container {
       position: relative;
-      width: 640px;
+      width: 100%;
+      max-width: 640px;
       height: 480px;
       border: 2px solid #00ff66;
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 0 25px rgba(0, 255, 102, 0.2);
     }
-
+    
+    /* Forzamos que ambos elementos tengan la misma escala visual */
     video, canvas {
       position: absolute;
       top: 0;
       left: 0;
-      width: 640px;
-      height: 480px;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
       transform: scaleX(-1); /* Efecto espejo */
     }
 
