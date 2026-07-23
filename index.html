@@ -271,6 +271,7 @@
     }
 
     function onResults(results) {
+      adjustCanvasSize();
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
