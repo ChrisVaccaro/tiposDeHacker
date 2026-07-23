@@ -10,74 +10,56 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html, body {
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      background-color: #0b0e14;
-      font-family: 'Courier New', Courier, monospace;
-      color: #00ff66;
-    }
-
     body {
+      font-family: 'Courier New', Courier, monospace;
+      background-color: #0b0e14;
+      color: #00ff66;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      padding: 2vh 1rem;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
     }
 
     h1 {
-      font-size: clamp(1.2rem, 3vh, 2rem);
+      margin-bottom: 10px;
       text-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
-      text-align: center;
-      flex-shrink: 0;
     }
 
     .container {
       position: relative;
-      height: 60vh;
-      aspect-ratio: 4 / 3;
-      max-width: 95vw;
+      width: 640px;
+      height: 480px;
       border: 2px solid #00ff66;
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 0 25px rgba(0, 255, 102, 0.2);
-      flex-shrink: 1;
     }
 
     video, canvas {
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+      width: 640px;
+      height: 480px;
       transform: scaleX(-1); /* Efecto espejo */
     }
 
     .ui-panel {
+      margin-top: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 1vh;
-      width: 100%;
-      max-width: 640px;
-      flex-shrink: 0;
+      gap: 12px;
     }
 
     button {
       background-color: #00ff66;
       color: #0b0e14;
       border: none;
-      padding: 1.2vh 2rem;
-      font-size: clamp(0.9rem, 2vh, 1.1rem);
+      padding: 14px 28px;
+      font-size: 1.1rem;
       font-weight: bold;
       font-family: inherit;
       border-radius: 6px;
@@ -88,7 +70,7 @@
 
     button:hover:not(:disabled) {
       background-color: #33ff88;
-      transform: scale(1.03);
+      transform: scale(1.05);
     }
 
     button:disabled {
@@ -97,14 +79,14 @@
     }
 
     .result-badge {
-      font-size: clamp(0.85rem, 1.8vh, 1rem);
+      font-size: 1.1rem;
       font-weight: bold;
-      padding: 1vh 1.5rem;
+      padding: 10px 20px;
       border-radius: 6px;
       background-color: #121824;
       border: 1px solid #1f293d;
+      min-height: 24px;
       text-align: center;
-      width: 100%;
     }
   </style>
 </head>
@@ -123,6 +105,7 @@
   </div>
 
   <script>
+    // Configuración con rutas relativas a imágenes PNG locales
     const HACKER_TYPES = [
       { name: "WHITE HAT", color: "#FFFFFF", desc: "Hacker Ético / Defensor del Sistema", imgSrc: "img/white_hat.png" },
       { name: "BLACK HAT", color: "#1a1a1a", desc: "Ciberdelincuente / Creador de Exploits", imgSrc: "img/black_hat.png" },
@@ -133,6 +116,7 @@
       { name: "PURPLE HAT", color: "#a832a8", desc: "Red/Blue Team / Probador de Defensas", imgSrc: "img/purple_hat.png" }
     ];
 
+    // Precargar las imágenes locales en objetos Image para un renderizado fluido
     HACKER_TYPES.forEach(hacker => {
       hacker.imgElement = new Image();
       hacker.imgElement.src = hacker.imgSrc;
@@ -149,6 +133,7 @@
     const btnScan = document.getElementById('btn-scan');
     const resultText = document.getElementById('result-text');
 
+    // Botón con animación de ruleta y activación del escáner
     btnScan.addEventListener('click', () => {
       if (isSpinning) return;
       isSpinning = true;
@@ -169,6 +154,7 @@
         if (currentStep >= totalSteps) {
           clearInterval(spinInterval);
           
+          // Resultado final
           const finalIndex = Math.floor(Math.random() * HACKER_TYPES.length);
           currentHacker = HACKER_TYPES[finalIndex];
           
@@ -181,11 +167,14 @@
       }, speed);
     });
 
+    // Dibujar la Malla Facial Neón + Láser de Escaneo
     function drawScanEffect(ctx, landmarks) {
+      // 1. Dibujar malla de puntos interconectados
       ctx.strokeStyle = "rgba(0, 255, 102, 0.4)";
       ctx.fillStyle = "#00ff66";
       ctx.lineWidth = 0.5;
 
+      // Dibujar puntos clave
       for (let i = 0; i < landmarks.length; i += 4) {
         const pt = landmarks[i];
         const x = pt.x * canvasElement.width;
@@ -196,11 +185,13 @@
         ctx.fill();
       }
 
+      // 2. Línea Láser de Escaneo
       scanLineY += 8 * scanDirection;
       if (scanLineY > canvasElement.height || scanLineY < 0) {
         scanDirection *= -1;
       }
 
+      // Brillo del láser
       ctx.shadowColor = "#00ff66";
       ctx.shadowBlur = 15;
       ctx.strokeStyle = "#ffffff";
@@ -211,10 +202,11 @@
       ctx.lineTo(canvasElement.width, scanLineY);
       ctx.stroke();
 
+      // Resetear sombras
       ctx.shadowBlur = 0;
     }
 
-    // Dibujar el Sombrero proporcional al rostro detectado
+    // Dibujar el Sombrero a partir de la Imagen PNG local
     function drawHat(ctx, landmarks) {
       if (!currentHacker || !currentHacker.imgElement.complete) return;
 
@@ -229,28 +221,29 @@
       const xRight = rightTemple.x * canvasElement.width;
       const yRight = rightTemple.y * canvasElement.height;
 
-      // Distancia entre las sienes en píxeles
+      // Cálculo de ancho e inclinación del rostro
       const headWidth = Math.hypot(xRight - xLeft, yRight - yLeft);
       const angle = Math.atan2(yRight - yLeft, xRight - xLeft);
-
-      // Calculamos el ratio de aspecto original de la imagen cargada
-      const nativeWidth = currentHacker.imgElement.naturalWidth || 500;
-      const nativeHeight = currentHacker.imgElement.naturalHeight || 500;
-      const aspectRatio = nativeHeight / nativeWidth;
-
-      // Ancho ajustado proporcionalmente al ancho del rostro (factor 1.6x a 1.7x es ideal para un Fedora)
-      const hatWidth = headWidth * 1.9;
-      const hatHeight = hatWidth * 0.75;
-
+      
+      // Detección de dispositivo: si la pantalla es <= 768px es móvil
+      const isMobile = window.innerWidth <= 768;
+      const scaleFactor = isMobile ? 1.75 : 2.2;
+      const verticalOffsetRatio = isMobile ? 0.35 : 0.4
+      
       ctx.save();
-      // Trasladamos al punto superior del rostro y desplazamos según la altura proporcional del sombrero
-      ctx.translate(xTop, yTop - (hatHeight * 0.20));
+      // Trasladar al punto superior de la frente y aplicar rotación
+      ctx.translate(xTop, yTop - (headWidth * verticalOffsetRatio));
       ctx.rotate(angle);
 
+      // Dimensiones proporcionales a la cabeza
+      const hatWidth = headWidth * scaleFactor;
+      const hatHeight = hatWidth * 0.75; // Proporción de aspecto adaptable
+
+      // Dibujar la imagen PNG centrada sobre el eje
       ctx.drawImage(
         currentHacker.imgElement,
-        -hatWidth / 2,
-        -hatHeight / 2,
+        -hatWidth/2,
+        -hatHeight /2.3,
         hatWidth,
         hatHeight
       );
@@ -264,9 +257,11 @@
 
       if (results.multiFaceLandmarks) {
         for (const landmarks of results.multiFaceLandmarks) {
+          // Si está escaneando, dibuja la red facial y el láser
           if (isSpinning) {
             drawScanEffect(canvasCtx, landmarks);
           }
+          // Siempre dibuja el sombrero si ya hay uno asignado
           drawHat(canvasCtx, landmarks);
         }
       }
