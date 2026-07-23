@@ -169,7 +169,16 @@
         }
       }, speed);
     });
-
+    // Ajustar resolución del Canvas dinámicamente según el video de la cámara
+    function adjustCanvasSize() {
+      if (videoElement.videoWidth && videoElement.videoHeight) {
+        if (canvasElement.width !== videoElement.videoWidth || canvasElement.height !== videoElement.videoHeight) {
+          canvasElement.width = videoElement.videoWidth;
+          canvasElement.height = videoElement.videoHeight;
+        }
+      }
+    }
+    
     // Dibujar la Malla Facial Neón + Láser de Escaneo
     function drawScanEffect(ctx, landmarks) {
       // Detección de pantalla móvil
