@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>¿Qué tipo de Hacker serías?</title>
+  
+  <!-- MediaPipe dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+  <style>
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background-color: #0b0e14;
+      color: #00ff66;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      text-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
+    }
+
+    .container {
+      position: relative;
+      width: 640px;
+      height: 480px;
+      border: 2px solid #00ff66;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 25px rgba(0, 255, 102, 0.2);
+    }
+
+    video, canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 640px;
+      height: 480px;
+      transform: scaleX(-1); /* Efecto espejo */
+    }
+
+    .ui-panel {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    button {
+      background-color: #00ff66;
+      color: #0b0e14;
+      border: none;
+      padding: 14px 28px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      font-family: inherit;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+      transition: all 0.2s ease;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: #33ff88;
+      transform: scale(1.05);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .result-badge {
+      font-size: 1.1rem;
+      font-weight: bold;
+      padding: 10px 20px;
+      border-radius: 6px;
+      background-color: #121824;
+      border: 1px solid #1f293d;
+      min-height: 24px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>[?] ¿QUÉ TIPO DE HACKER ERES?</h1>
+  
+  <div class="container">
+    <video id="webcam" autoplay playsinline></video>
+    <canvas id="output_canvas" width="640" height="480"></canvas>
+  </div>
+
+  <div class="ui-panel">
+    <button id="btn-scan">Escanear Mi Perfil</button>
+    <div id="result-text" class="result-badge">Presiona el botón para iniciar la calibración...</div>
+  </div>
+
+  <script>
+    // Configuración con rutas relativas a imágenes PNG locales
+    const HACKER_TYPES = [
+      { name: "WHITE HAT", color: "#FFFFFF", desc: "Hacker Ético / Defensor del Sistema", imgSrc: "img/white_hat.png" },
+      { name: "BLACK HAT", color: "#1a1a1a", desc: "Ciberdelincuente / Creador de Exploits", imgSrc: "img/black_hat.png" },
+      { name: "GREY HAT", color: "#808080", desc: "Neutral / Rompe la seguridad por curiosidad", imgSrc: "img/grey_hat.png" },
+      { name: "RED HAT", color: "#ff2a2a", desc: "Vigilante / Caza implacablemente a Black Hats", imgSrc: "img/red_hat.png" },
+      { name: "BLUE HAT", color: "#00a2ff", desc: "Consultor de Seguridad / Bug Hunter", imgSrc: "img/blue_hat.png" },
+      { name: "GREEN HAT", color: "#00ff66", desc: "Aprendiz / Apasionado del Ciberespacio", imgSrc: "img/green_hat.png" },
+      { name: "PURPLE HAT", color: "#a832a8", desc: "Red/Blue Team / Probador de Defensas", imgSrc: "img/purple_hat.png" }
+    ];
+
+    // Precargar las imágenes locales en objetos Image para un renderizado fluido
+    HACKER_TYPES.forEach(hacker => {
+      hacker.imgElement = new Image();
+      hacker.imgElement.src = hacker.imgSrc;
+    });
+
+    let currentHacker = null;
+    let isSpinning = false;
+    let scanLineY = 0;
+    let scanDirection = 1;
+
+    const videoElement = document.getElementById('webcam');
+    const canvasElement = document.getElementById('output_canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    const btnScan = document.getElementById('btn-scan');
+    const resultText = document.getElementById('result-text');
+
+    // Botón con animación de ruleta y activación del escáner
+    btnScan.addEventListener('click', () => {
+      if (isSpinning) return;
+      isSpinning = true;
+      btnScan.disabled = true;
+
+      let speed = 50;
+      let totalSteps = 35;
+      let currentStep = 0;
+
+      const spinInterval = setInterval(() => {
+        const randomIndex = Math.floor(Math.random() * HACKER_TYPES.length);
+        currentHacker = HACKER_TYPES[randomIndex];
+        
+        resultText.textContent = `ESCANEAR ROSTRO... [${currentHacker.name}]`;
+        resultText.style.color = currentHacker.color === '#1a1a1a' ? '#cccccc' : currentHacker.color;
+
+        currentStep++;
+        if (currentStep >= totalSteps) {
+          clearInterval(spinInterval);
+          
+          // Resultado final
+          const finalIndex = Math.floor(Math.random() * HACKER_TYPES.length);
+          currentHacker = HACKER_TYPES[finalIndex];
+          
+          resultText.textContent = `${currentHacker.name}: ${currentHacker.desc}`;
+          resultText.style.color = currentHacker.color === '#1a1a1a' ? '#ffffff' : currentHacker.color;
+          
+          isSpinning = false;
+          btnScan.disabled = false;
+        }
+      }, speed);
+    });
+
+    // Dibujar la Malla Facial Neón + Láser de Escaneo
+    function drawScanEffect(ctx, landmarks) {
+      // 1. Dibujar malla de puntos interconectados
+      ctx.strokeStyle = "rgba(0, 255, 102, 0.4)";
+      ctx.fillStyle = "#00ff66";
+      ctx.lineWidth = 0.5;
+
+      // Dibujar puntos clave
+      for (let i = 0; i < landmarks.length; i += 4) {
+        const pt = landmarks[i];
+        const x = pt.x * canvasElement.width;
+        const y = pt.y * canvasElement.height;
+
+        ctx.beginPath();
+        ctx.arc(x, y, 1.2, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+
+      // 2. Línea Láser de Escaneo
+      scanLineY += 8 * scanDirection;
+      if (scanLineY > canvasElement.height || scanLineY < 0) {
+        scanDirection *= -1;
+      }
+
+      // Brillo del láser
+      ctx.shadowColor = "#00ff66";
+      ctx.shadowBlur = 15;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+      ctx.moveTo(0, scanLineY);
+      ctx.lineTo(canvasElement.width, scanLineY);
+      ctx.stroke();
+
+      // Resetear sombras
+      ctx.shadowBlur = 0;
+    }
+
+    // Dibujar el Sombrero a partir de la Imagen PNG local
+    function drawHat(ctx, landmarks) {
+      if (!currentHacker || !currentHacker.imgElement.complete) return;
+
+      const topHead = landmarks[10];
+      const leftTemple = landmarks[127];
+      const rightTemple = landmarks[356];
+
+      const xTop = topHead.x * canvasElement.width;
+      const yTop = topHead.y * canvasElement.height;
+      const xLeft = leftTemple.x * canvasElement.width;
+      const yLeft = leftTemple.y * canvasElement.height;
+      const xRight = rightTemple.x * canvasElement.width;
+      const yRight = rightTemple.y * canvasElement.height;
+
+      // Cálculo de ancho e inclinación del rostro
+      const headWidth = Math.hypot(xRight - xLeft, yRight - yLeft);
+      const angle = Math.atan2(yRight - yLeft, xRight - xLeft);
+
+      ctx.save();
+      // Trasladar al punto superior de la frente y aplicar rotación
+      ctx.translate(xTop, yTop - (headWidth * 0.4));
+      ctx.rotate(angle);
+
+      // Dimensiones proporcionales a la cabeza
+      const hatWidth = headWidth * 2.2;
+      const hatHeight = hatWidth * 0.75; // Proporción de aspecto adaptable
+
+      // Dibujar la imagen PNG centrada sobre el eje
+      ctx.drawImage(
+        currentHacker.imgElement,
+        -hatWidth/2,
+        -hatHeight /2.3,
+        hatWidth,
+        hatHeight
+      );
+
+      ctx.restore();
+    }
+
+    function onResults(results) {
+      canvasCtx.save();
+      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+      if (results.multiFaceLandmarks) {
+        for (const landmarks of results.multiFaceLandmarks) {
+          // Si está escaneando, dibuja la red facial y el láser
+          if (isSpinning) {
+            drawScanEffect(canvasCtx, landmarks);
+          }
+          // Siempre dibuja el sombrero si ya hay uno asignado
+          drawHat(canvasCtx, landmarks);
+        }
+      }
+      canvasCtx.restore();
+    }
+
+    const faceMesh = new FaceMesh({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    });
+
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+
+    faceMesh.onResults(onResults);
+
+    const camera = new Camera(videoElement, {
+      onFrame: async () => {
+        await faceMesh.send({ image: videoElement });
+      },
+      width: 640,
+      height: 480
+    });
+
+    camera.start();
+  </script>
+</body>
+</html>
